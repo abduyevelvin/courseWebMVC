@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:jaxws="http://cxf.apache.org/jaxws"
+	   xmlns:soap="http://cxf.apache.org/bindings/soap" xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	   xmlns:util="http://www.springframework.org/schema/util"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans
+    	http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    	http://www.springframework.org/schema/context
+    	http://www.springframework.org/schema/context/spring-context-3.0.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd http://cxf.apache.org/bindings/soap http://cxf.apache.org/schemas/configuration/soap.xsd http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+	<context:component-scan base-package="az.orient.courseWeb.*" />
+
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/pages/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+	<context:annotation-config />
+
+<!--	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**/*" />
+			<bean id="webContentInterceptor" class="org.springframework.web.servlet.mvc.WebContentInterceptor">
+				<property name="cacheSeconds" value="0" />
+				<property name="useExpiresHeader" value="true"/>
+				<property name="useCacheControlHeader" value="true" />
+				<property name="useCacheControlNoStore" value="true" />
+			</bean>
+		</mvc:interceptor>
+	</mvc:interceptors>-->
+
+	<import resource="classpath:META-INF/cxf/cxf.xml" />
+	<import resource="classpath:META-INF/cxf/cxf-servlet.xml" />
+
+	<jaxws:endpoint id="courseWebServicesEndpoint" implementor="#courseWebServices" address="/CourseWebServices">
+		<jaxws:binding>
+			<soap:soapBinding mtomEnabled="false" version="1.2" />
+		</jaxws:binding>
+		<jaxws:properties>
+			<entry key="mtom-enabled" value="false" />
+		</jaxws:properties>
+	</jaxws:endpoint>
+
+	<!-- JSON REST WEB SERVICES -->
+	<util:map id="jsonNamespaceMap" map-class="java.util.Hashtable">
+		<entry key="http://services.institute.com" value="" />
+		<entry key="http://cxf.apache.org/bindings/xformat" value="cxf" />
+	</util:map>
+
+	<bean id="jsonInputFactory" class="org.codehaus.jettison.mapped.MappedXMLInputFactory">
+		<constructor-arg ref="jsonNamespaceMap" />
+	</bean>
+
+	<bean id="jsonOutputFactory" class="org.codehaus.jettison.mapped.MappedXMLOutputFactory">
+		<constructor-arg ref="jsonNamespaceMap" />
+	</bean>
+
+	<bean id="jsonProvider" class="org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider" />
+
+	<bean id="courseRestWebServices" class="az.orient.courseWeb.webservices.CourseRestWebServicesImpl" />
+
+	<jaxrs:server id="courseWebServiceRest" address="/courseRs">
+		<jaxrs:serviceBeans>
+			<ref bean="courseRestWebServices" />
+		</jaxrs:serviceBeans>
+		<jaxrs:extensionMappings>
+			<entry key="text" value="text/xml" />
+			<entry key="xml" value="application/xml" />
+			<entry key="json" value="application/json" />
+		</jaxrs:extensionMappings>
+		<jaxrs:languageMappings />
+		<jaxrs:properties>
+			<entry key="javax.xml.stream.XMLInputFactory">
+				<ref bean="jsonInputFactory" />
+			</entry>
+			<entry key="javax.xml.stream.XMLOutputFactory">
+				<ref bean="jsonOutputFactory" />
+			</entry>
+		</jaxrs:properties>
+		<jaxrs:providers>
+			<ref bean="jsonProvider" />
+		</jaxrs:providers>
+	</jaxrs:server>
+
+	<bean id="studentDao" class="az.orient.courseWeb.dao.StudentDaoImpl" />
+	<bean id="teacherDao" class="az.orient.courseWeb.dao.TeacherDaoImpl" />
+	<bean id="loginDao" class="az.orient.courseWeb.dao.LoginDaoImpl" />
+	<bean id="lessonDao" class="az.orient.courseWeb.dao.LessonDaoImpl" />
+	<bean id="scheduleDao" class="az.orient.courseWeb.dao.ScheduleDaoImpl" />
+
+	<bean id="courseWebServices" class="az.orient.courseWeb.webservices.CourseWebServicesImpl" />
+
+	<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+		<property name="cacheSeconds" value="0" />
+	</bean>
+
+	<mvc:resources mapping="/resources/**" location="/resources/gui/" />
+
+	<mvc:annotation-driven />
+
+</beans>
